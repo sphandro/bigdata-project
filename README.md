@@ -1,17 +1,33 @@
 # CIS 4560 Bigdata Project
 
-| Term Project Group 2 |                      |
-|:---------------------|:---------------------|
-| Ethan Cheng          | John Haavardsen      |
-| Nemesio Merales      | Alex Monita-Guzman   |
-| Zichen Xue           |
+| Group 2              |                      |                      |                      |                      |
+|:---------------------|:---------------------|:---------------------|:---------------------|:---------------------|
+| Ethan Cheng          | John Haavardsen      | Nemesio Merales      | Alex Monita-Guzman   | Zichen Xue           |
 
+## Abstract
 This project will present an analysis of traffic congestion patterns in the Contiguous United States before and after the COVID-19 shutdowns, focusing on data manipulation and analysis techniques. The study will leverage a large 12GB dataset spanning from February 2016 to September 2022, comprising over 33 million recorded congestion events across the United States. The analysis involves temporal segmentation of the dataset into pre-COVID and post-COVID periods, followed by the calculation and comparison of congestion metrics. The project will utilize Hadoop and Hive for data handling and cleaning processes and Excel and Power BI for data analysis and visualization. The results from this study will offer insights into transportation planning and policy-making efforts surrounding events like large-scale shutdowns. 
 
-# Dataset 
+## Dataset Source
 US Traffic Congestions (2016-2022) 12.88 GB 
 
-https://www.kaggle.com/datasets/sobhanmoosavi/us-traffic-congestions-2016-2022 
+https://www.kaggle.com/datasets/sobhanmoosavi/us-traffic-congestions-2016-2022
+
+## Metadata
+
+
+|        |          |
+|:-------|:---------|
+| **ID** | Event ID |
+| **Severity** | Severity of event, as reported by the main data provider, is rated on a scale from 0 to 4, with 0 being the least severe. |
+| **Start_Lat** | Approximate latitude coordinate of the congestion event. |
+| **Start_Lng** | Approximate longitude coordinate of the congestion event. |
+| **StartTime** | Approximate start time of the congestion event, given in the local timezone. |
+| **EndTime** | Approximate end time of the congestion event, given in the local timezone.  |
+| **Distance (mi)** | The length of the road extent affected by the congestion event, measured in miles. |
+| **DelayFromTypicalTraffic (mins)** | Delay compared to typical traffic flow (in minutes) due to the congestion event, as reported by the provider. |
+| **DelayFromFreeFlowSpeed  (mins)** | Delay compared to free traffic flow (in minutes) due to the congestion event, as reported by the provider. |
+| **Congestion_Speed** |  The categorically ranked speed of traffic impacted by the congestion, as reported by the provider. |
+|        |          |
 
 # Process
 1. Temporal Segmentation: Divide the dataset into two segments: pre-COVID period and post-COVID period. The pre-COVID period could be defined as the time period before the implementation of widespread COVID-19 shutdowns and restrictions, while the post-COVID period could be defined as the time period after these measures were implemented. 
