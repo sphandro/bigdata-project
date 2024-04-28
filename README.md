@@ -13,9 +13,7 @@ US Traffic Congestions (2016-2022) 12.88 GB
 https://www.kaggle.com/datasets/sobhanmoosavi/us-traffic-congestions-2016-2022
 
 ## Metadata
-
-
-|        |          |
+| Data Point | Description |
 |:-------|:---------|
 | **ID** | Event ID |
 | **Severity** | Severity of event, as reported by the main data provider, is rated on a scale from 0 to 4, with 0 being the least severe. |
@@ -28,6 +26,52 @@ https://www.kaggle.com/datasets/sobhanmoosavi/us-traffic-congestions-2016-2022
 | **DelayFromFreeFlowSpeed  (mins)** | Delay compared to free traffic flow (in minutes) due to the congestion event, as reported by the provider. |
 | **Congestion_Speed** |  The categorically ranked speed of traffic impacted by the congestion, as reported by the provider. |
 |        |          |
+
+# Setup
+## Prep dataset
+Navigate into dataset directory and uncompress the split files
+
+```
+cd dataset/
+tar -xzf split-aa.tar.gz
+tar -xzf split-ab.tar.gz
+```
+
+Merge parts into one csv file
+
+```
+cat split-aa split-ab > us_congestion.csv
+```
+
+## Create HDFS directory
+```
+hdfs dfs mkdir [username]/tmp/congestion
+```
+
+## Create Hive Table
+```
+DROP TABLE IF EXISTS congestion;
+CREATE EXTERNAL TABLE IF NOT EXISTS congestion(
+   ID TINYINT,
+   Severity TINYINT,
+   Start_Lat TINYINT,
+   Start_Lng TINYINT,
+   StartTime TINYINT,
+   EndTime TINYINT,
+   Distance TINYINT,
+   DelayFromTypicalTraffic TINYINT,
+   DelayFromFreeFlowSpeed TINYINT,
+   Congestion_Speed TINYINT )
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ',';
+```
+
+## Load data into table
+
+```
+LOAD DAATA '[username]/tmp/congestion' INTO TABLE congestion;
+```
+
 
 # Process
 1. Temporal Segmentation: Divide the dataset into two segments: pre-COVID period and post-COVID period. The pre-COVID period could be defined as the time period before the implementation of widespread COVID-19 shutdowns and restrictions, while the post-COVID period could be defined as the time period after these measures were implemented. 
