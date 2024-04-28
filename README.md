@@ -25,6 +25,26 @@ https://www.kaggle.com/datasets/sobhanmoosavi/us-traffic-congestions-2016-2022
 | **DelayFromTypicalTraffic (mins)** | Delay compared to typical traffic flow (in minutes) due to the congestion event, as reported by the provider. |
 | **DelayFromFreeFlowSpeed  (mins)** | Delay compared to free traffic flow (in minutes) due to the congestion event, as reported by the provider. |
 | **Congestion_Speed** |  The categorically ranked speed of traffic impacted by the congestion, as reported by the provider. |
+| Description | Text description |
+| Street |  |
+| City |  |
+| County |  |
+| State |  |
+| Country |  |
+| ZipCode |  |
+| LocalTimeZone |  |
+| WeatherStation_AirportCode |  |
+| WeatherTimeStamp |  |
+| Temperature |  Fahrenheit |
+| WindChill |  Fahrenheit |
+| Humidity |  % |
+| Pressure | inches |
+| Visibility | miles |
+| WindDir |  |
+| WindSpeed | miles per hour  |
+| Precipitation | inches |
+| Weather_Event |  |
+| Weather_Conditions |  |
 |        |          |
 
 # Setup
@@ -45,31 +65,52 @@ cat split-aa split-ab > us_congestion.csv
 
 ## Create HDFS directory
 ```
-hdfs dfs mkdir [username]/tmp/congestion
+hdfs dfs mkdir /tmp/data/congestion
+hdfs dfs -put us_congestion.csv /tmp/data/congestion
+hdfs dfs -ls /tmp/data/congestion
 ```
 
 ## Create Hive Table
 ```
+use [username];
+
 DROP TABLE IF EXISTS congestion;
-CREATE EXTERNAL TABLE IF NOT EXISTS congestion(
-   ID TINYINT,
+
+CREATE EXTERNAL TABLE IF NOT EXISTS us_congestion(
+   ID STRING,
    Severity TINYINT,
-   Start_Lat TINYINT,
-   Start_Lng TINYINT,
-   StartTime TINYINT,
-   EndTime TINYINT,
-   Distance TINYINT,
+   Start_Lat DOUBLE,
+   Start_Lng DOUBLE,
+   StartTime TIMESTAMP,
+   EndTime TIMESTAMP,
+   Distance DOUBLE,
    DelayFromTypicalTraffic TINYINT,
    DelayFromFreeFlowSpeed TINYINT,
-   Congestion_Speed TINYINT )
-ROW FORMAT DELIMITED
-FIELDS TERMINATED BY ',';
-```
-
-## Load data into table
-
-```
-LOAD DAATA '[username]/tmp/congestion' INTO TABLE congestion;
+   Congestion_Speed STRING,
+   Description STRING,
+   Street STRING,
+   City STRING,
+   County STRING,
+   State STRING,
+   Country STRING,
+   ZipCode INT,
+   LocalTimeZone STRING,
+   WeatherStation_AirportCode STRING,
+   WeatherTimeStamp TIMESTAMP,
+   Temperature TINYINT,
+   WindChill TINYINT,
+   Humidity TINYINT,
+   Pressure DOUBLE,
+   Visibility TINYINT, 
+   WindDir STRING,
+   WindSpeed TINYINT,
+   Precipitation TINYINT,
+   Weather_Event STRING,
+   Weather_Conditions STRING )
+ROW FORMAT DELIMITED 
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE LOCATION '/user/amonita/tmp/data/congestion'
+TBLPROPERTIES ('skip.header.line.count'='1');
 ```
 
 
