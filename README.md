@@ -25,33 +25,33 @@ https://www.kaggle.com/datasets/sobhanmoosavi/us-traffic-congestions-2016-2022
 | **DelayFromTypicalTraffic (mins)** | Delay compared to typical traffic flow (in minutes) due to the congestion event, as reported by the provider. |
 | **DelayFromFreeFlowSpeed  (mins)** | Delay compared to free traffic flow (in minutes) due to the congestion event, as reported by the provider. |
 | **Congestion_Speed** |  The categorically ranked speed of traffic impacted by the congestion, as reported by the provider. |
-| Description | Text description |
-| Street |  |
-| City |  |
-| County |  |
-| State |  |
-| Country |  |
-| ZipCode |  |
-| LocalTimeZone |  |
-| WeatherStation_AirportCode |  |
-| WeatherTimeStamp |  |
-| Temperature |  Fahrenheit |
-| WindChill |  Fahrenheit |
-| Humidity |  % |
-| Pressure | inches |
-| Visibility | miles |
-| WindDir |  |
-| WindSpeed | miles per hour  |
-| Precipitation | inches |
-| Weather_Event |  |
-| Weather_Conditions |  |
+| **Description** | Text description |
+| **Street** |  |
+| **City** |  |
+| **County** |  |
+| **State** |  |
+| **Country** |  |
+| **ZipCode** |  |
+| **LocalTimeZone** |  |
+| **WeatherStation_AirportCode** |  |
+| **WeatherTimeStamp** |  |
+| **Temperature** |  Fahrenheit |
+| **WindChill** |  Fahrenheit |
+| **Humidity** |  % |
+| **Pressure** | inches |
+| **Visibility** | miles |
+| **WindDir** |  |
+| **WindSpeed** | miles per hour  |
+| **Precipitation** | inches |
+| **Weather_Event** |  |
+| **Weather_Conditions** |  |
 |        |          |
 
 # Setup
 ## Prep dataset
 Navigate into dataset directory and uncompress the split files
 
-```
+```bash
 cd dataset/
 tar -xzf split-aa.tar.gz
 tar -xzf split-ab.tar.gz
@@ -59,19 +59,19 @@ tar -xzf split-ab.tar.gz
 
 Merge parts into one csv file
 
-```
+```bash
 cat split-aa split-ab > us_congestion.csv
 ```
 
 ## Create HDFS directory
-```
+```bash
 hdfs dfs mkdir /tmp/data/congestion
 hdfs dfs -put us_congestion.csv /tmp/data/congestion
 hdfs dfs -ls /tmp/data/congestion
 ```
 
 ## Create Hive Table
-```
+```sql
 use [username];
 
 DROP TABLE IF EXISTS congestion;
@@ -109,13 +109,25 @@ CREATE EXTERNAL TABLE IF NOT EXISTS us_congestion(
    Weather_Conditions STRING )
 ROW FORMAT DELIMITED 
 FIELDS TERMINATED BY ','
-STORED AS TEXTFILE LOCATION '/user/amonita/tmp/data/congestion'
+STORED AS TEXTFILE LOCATION '/user/[username]/tmp/data/congestion'
 TBLPROPERTIES ('skip.header.line.count'='1');
 ```
 
 
 # Process
 1. Temporal Segmentation: Divide the dataset into two segments: pre-COVID period and post-COVID period. The pre-COVID period could be defined as the time period before the implementation of widespread COVID-19 shutdowns and restrictions, while the post-COVID period could be defined as the time period after these measures were implemented. 
+
+```sql
+CREATE TABLE IF NOT EXISTS partitioned_us_congestion (
+    -- Define needed columns based on dataset
+    ...
+    startTime TIMESTAMP,
+    state STRING,
+    month STRING,
+    lockdown_period STRING
+)
+PARTITIONED BY (state STRING, month STRING, lockdown_period STRING);
+```
 
 2. Congestion Metrics Calculation: Calculate relevant congestion metrics for each segment, such as: 
 
@@ -127,6 +139,23 @@ TBLPROPERTIES ('skip.header.line.count'='1');
 
    - Delay metrics: Calculate average delay times (e.g., DelayFromTypicalTraffic and DelayFromFreeFlowSpeed columns) for each segment. 
 
+```sql
+-- Insert data into partitioned_us_congestion
+INSERT OVERWRITE TABLE partitioned_us_congestion PARTITION (state, month, lockdown_period)
+SELECT
+    ...
+    state,
+    SUBSTRING(startTime, 5, 2) AS month
+    CASE
+        WHEN startTime < '2020-03-01' THEN 'before_lockdown'
+        ELSE 'after_lockdown'
+    END AS lockdown_period
+FROM
+    us_congestion
+WHERE startTime > '2017-12-31T24:00:00.000-00:00';
+```
+
+
 3. Comparison Analysis: Compare the congestion metrics between the pre-COVID and post-COVID periods to identify any significant differences or trends: 
 
    - Severity comparison: Determine if there are differences in the severity of congestion events before and after the COVID-19 shutdown. 
@@ -135,6 +164,30 @@ TBLPROPERTIES ('skip.header.line.count'='1');
 
    - Delay comparison: Compare average delay times before and after the COVID-19 shutdown to assess changes in travel times and congestion impacts. 
 
+```sql
+-- Calculate average congestion severity by state and month
+INSERT OVERWRITE DIRECTORY '/user/[username]/tmp/data/congestion_by_state_month_period'
+ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+SELECT
+    ...,
+    state,
+    month,
+    lockdown_period,
+    AVG(Severity) AS avg_congestion_severity
+FROM
+    partitioned_us_congestion
+GROUP BY
+    state,
+    month,
+    lockdown_period;
+```
+```bash
+hdfs dfs -get tmp/data/congestion_by_state_month_period/000000_0 avg_congestion.txt
+```
+Add column titles to top of file to make excel import easier
+```bash
+echo '[column_names]'$'\n'"$(cat avg_congestion.txt)" > avg_congestion_columns.csv
+```
 4. Visualization: Visualize the congestion metrics using charts, graphs, or 3D maps to effectively communicate the findings of our analysis. We will create time series plots showing congestion trends over time, comparing congestion metrics between the pre-COVID and post-COVID periods, or spatial maps illustrating changes in congestion patterns across different regions. 
 
 5. Statistical Analysis: Conduct statistical tests, such as t-tests to determine if the observed differences in congestion metrics between the two periods are statistically significant.
