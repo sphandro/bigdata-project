@@ -78,35 +78,35 @@ DROP TABLE IF EXISTS congestion;
 
 CREATE EXTERNAL TABLE IF NOT EXISTS us_congestion(
    ID STRING,
-   Severity TINYINT,
-   Start_Lat DOUBLE,
-   Start_Lng DOUBLE,
-   StartTime TIMESTAMP,
-   EndTime TIMESTAMP,
-   Distance DOUBLE,
-   DelayFromTypicalTraffic TINYINT,
-   DelayFromFreeFlowSpeed TINYINT,
-   Congestion_Speed STRING,
-   Description STRING,
-   Street STRING,
-   City STRING,
-   County STRING,
-   State STRING,
-   Country STRING,
-   ZipCode INT,
-   LocalTimeZone STRING,
-   WeatherStation_AirportCode STRING,
-   WeatherTimeStamp TIMESTAMP,
-   Temperature TINYINT,
-   WindChill TINYINT,
-   Humidity TINYINT,
-   Pressure DOUBLE,
-   Visibility TINYINT, 
-   WindDir STRING,
-   WindSpeed TINYINT,
-   Precipitation TINYINT,
-   Weather_Event STRING,
-   Weather_Conditions STRING )
+   severity TINYINT,
+   start_Lat DOUBLE,
+   start_Lng DOUBLE,
+   startTime TIMESTAMP,
+   endTime TIMESTAMP,
+   distance DOUBLE,
+   delayFromTypicalTraffic TINYINT,
+   delayFromFreeFlowSpeed TINYINT,
+   congestion_Speed STRING,
+   description STRING,
+   street STRING,
+   city STRING,
+   county STRING,
+   state STRING,
+   country STRING,
+   zipCode INT,
+   localTimeZone STRING,
+   weatherStation_AirportCode STRING,
+   weatherTimeStamp TIMESTAMP,
+   temperature TINYINT,
+   windChill TINYINT,
+   humidity TINYINT,
+   pressure DOUBLE,
+   visibility TINYINT, 
+   windDir STRING,
+   windSpeed TINYINT,
+   precipitation TINYINT,
+   weather_Event STRING,
+   weather_Conditions STRING )
 ROW FORMAT DELIMITED 
 FIELDS TERMINATED BY ','
 STORED AS TEXTFILE LOCATION '/user/[username]/tmp/data/congestion'
@@ -118,15 +118,17 @@ TBLPROPERTIES ('skip.header.line.count'='1');
 1. Temporal Segmentation: Divide the dataset into two segments: pre-COVID period and post-COVID period. The pre-COVID period could be defined as the time period before the implementation of widespread COVID-19 shutdowns and restrictions, while the post-COVID period could be defined as the time period after these measures were implemented. 
 
 ```sql
-CREATE TABLE IF NOT EXISTS partitioned_us_congestion (
-    -- Define needed columns based on dataset
-    ...
+CREATE EXTERNAL TABLE IF NOT EXISTS partitioned_us_congestion (
+    id STRING,
+    severity TINYINT,
+    start_Lat DOUBLE,
+    start_Lng DOUBLE,
     startTime TIMESTAMP,
+    endTime TIMESTAMP,
+    distance DOUBLE,
     state STRING,
     month STRING,
-    lockdown_period STRING
-)
-PARTITIONED BY (state STRING, month STRING, lockdown_period STRING);
+    lockdown_period STRING );
 ```
 
 2. Congestion Metrics Calculation: Calculate relevant congestion metrics for each segment, such as: 
@@ -141,18 +143,24 @@ PARTITIONED BY (state STRING, month STRING, lockdown_period STRING);
 
 ```sql
 -- Insert data into partitioned_us_congestion
-INSERT OVERWRITE TABLE partitioned_us_congestion PARTITION (state, month, lockdown_period)
-SELECT
-    ...
+INSERT OVERWRITE TABLE partitioned_us_congestion
+SELECT 
+    id,
+    severity,
+    start_Lat,
+    start_Lng,
+    startTime,
+    endTime,
+    Distance,
     state,
-    SUBSTRING(startTime, 5, 2) AS month
+    MONTH(SUBSTRING(startTime, 0, 10)) AS month,
     CASE
-        WHEN startTime < '2020-03-01' THEN 'before_lockdown'
+        WHEN YEAR(SUBSTRING(startTime, 0, 10)) < '2020' THEN 'before_lockdown'
         ELSE 'after_lockdown'
     END AS lockdown_period
 FROM
     us_congestion
-WHERE startTime > '2017-12-31T24:00:00.000-00:00';
+WHERE year(substring(startTime, 0, 10)) >= '2018';
 ```
 
 
@@ -165,15 +173,14 @@ WHERE startTime > '2017-12-31T24:00:00.000-00:00';
    - Delay comparison: Compare average delay times before and after the COVID-19 shutdown to assess changes in travel times and congestion impacts. 
 
 ```sql
--- Calculate average congestion severity by state and month
+-- Calculate average congestion severity by state, month and lockdown_period
 INSERT OVERWRITE DIRECTORY '/user/[username]/tmp/data/congestion_by_state_month_period'
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
 SELECT
-    ...,
     state,
     month,
     lockdown_period,
-    AVG(Severity) AS avg_congestion_severity
+    AVG(severity) AS avg_congestion_severity
 FROM
     partitioned_us_congestion
 GROUP BY
@@ -181,6 +188,7 @@ GROUP BY
     month,
     lockdown_period;
 ```
+Transfer file to linux server
 ```bash
 hdfs dfs -get tmp/data/congestion_by_state_month_period/000000_0 avg_congestion.txt
 ```
