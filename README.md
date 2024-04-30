@@ -76,19 +76,33 @@ By analyzing the amount of congestion before and after the COVID-19 shutdown usi
 
 
 # Tutorial
-## Prep dataset
-Navigate into dataset directory and uncompress the split files
+## Pre Processing
+
+This original dataset contained hourly data for years 2016-2022, but we want to segment the data between two years before and prior to the COVID-19 lockdown. 
+
+To prune the 12GB csv file we use the following grep command to generate a new file containing data within our analysis range.
 
 ```bash
-cd dataset/
+grep -E '(,2018-|,2019-|,2020-|,2021-)' congestion.csv > congestion_18_21.csv
+```
+## Dataset Preparation
+
+The dataset in this repository has already been filterd. Begin by connecting to your remote linux node via ssh. 
+
+```bash
+ssh [username]@server_ip
+```
+Use the following terminal commands to download and extract the dataset.
+
+```bash
+wget -O congestion_18_21.tar.gz https://github.com/sphandro/bigdata-project/raw/main/dataset/congestion_18_21.tar.gz
+```
+
+```bash
 tar -xzf congestion_18_21.tar.gz
 ```
+ uncompress file, the resulting file is about 9.15GB
 
-Merge parts into one csv file
-
-```bash
-cat split-aa split-ab > congestion.csv
-```
 
 ## Create HDFS directory
 ```bash
@@ -138,7 +152,7 @@ ROW FORMAT DELIMITED
 FIELDS TERMINATED BY ','
 STORED AS TEXTFILE LOCATION '/user/[username]/congestion';
 ```
-Create smaller table to hold records attributes needed for analysis
+Create smaller table to hold only record attributes needed for analysis
 
 ```sql
 CREATE EXTERNAL TABLE IF NOT EXISTS congestion_slim (
@@ -149,10 +163,9 @@ CREATE EXTERNAL TABLE IF NOT EXISTS congestion_slim (
     lockdown_period STRING );
 
 ```
-Insert records from congestion table and label lockdown_period 
+Insert records from congestion table and label lockdown periods for segmentation later.
 
 ```sql
--- Insert data into congestion_slim
 INSERT INTO TABLE congestion_slim
 SELECT 
     severity,
@@ -166,10 +179,9 @@ SELECT
 FROM
     congestion;
 ```
-Create grouped congestion data by state, month, and year
+Our dataset contains hourly records accross the united states. Grouping by state, month, year and lockdown_period helps reduce the results further. Finally we calculate average congestion severity by state, month and lockdown_period.
 
 ```sql
--- Calculate average congestion severity by state, month and lockdown_period
 INSERT OVERWRITE DIRECTORY '/user/[username]/congestion_by_month_year'
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
 SELECT
@@ -191,7 +203,9 @@ GROUP BY
 Transfer file to linux server
 
 ### Linux Node
+
 Transfer files from HDFS to linux node
+
 ```bash 
 hdfs dfs -get congestion_by_month_year/000000_0 000000_0
 hdfs dfs -get congestion_by_month_year/000001_0 000001_0
