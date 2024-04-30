@@ -47,37 +47,64 @@ https://www.kaggle.com/datasets/sobhanmoosavi/us-traffic-congestions-2016-2022
 | **Weather_Conditions** |  |
 |        |          |
 
-# Setup
+# Process
+1. Temporal Segmentation: Divide the dataset into two segments: pre-COVID period and post-COVID period. The pre-COVID period could be defined as the time period before the implementation of widespread COVID-19 shutdowns and restrictions, while the post-COVID period could be defined as the time period after these measures were implemented. 
+
+2. Congestion Metrics Calculation: Calculate relevant congestion metrics for each segment, such as: 
+
+   [x] Average congestion severity: Calculate the average severity of congestion events (e.g., 	severity column) for each segment. 
+
+   [ ] Total congestion duration: Calculate the total duration of congestion events (e.g., using StartTime and EndTime columns) for each segment. 
+
+   [ ] Congestion frequency: Count the number of congestion events for each segment. 
+
+   [ ] Delay metrics: Calculate average delay times (e.g., DelayFromTypicalTraffic and DelayFromFreeFlowSpeed columns) for each segment. 
+
+3. Comparison Analysis: Compare the congestion metrics between the pre-COVID and post-COVID periods to identify any significant differences or trends: 
+
+   [x] Severity comparison: Determine if there are differences in the severity of congestion events before and after the COVID-19 shutdown. 
+
+   [ ] Duration comparison: Analyze if there are changes in the total duration or frequency of congestion events between the two periods. 
+
+   [ ] Delay comparison: Compare average delay times before and after the COVID-19 shutdown to assess changes in travel times and congestion impacts. 
+
+4. Visualization: Visualize the congestion metrics using charts, graphs, or 3D maps to effectively communicate the findings of our analysis. We will create time series plots showing congestion trends over time, comparing congestion metrics between the pre-COVID and post-COVID periods, or spatial maps illustrating changes in congestion patterns across different regions. 
+
+5. Statistical Analysis: Conduct statistical tests, such as t-tests to determine if the observed differences in congestion metrics between the two periods are statistically significant.
+
+By analyzing the amount of congestion before and after the COVID-19 shutdown using this approach, we can gain insights into how the pandemic and associated measures impacted traffic patterns, congestion levels, and travel behaviors. This analysis could provide valuable information for transportation planning, policy-making, and infrastructure management efforts. 
+
+
+# Tutorial
 ## Prep dataset
 Navigate into dataset directory and uncompress the split files
 
 ```bash
 cd dataset/
-tar -xzf split-aa.tar.gz
-tar -xzf split-ab.tar.gz
+tar -xzf congestion_18_21.tar.gz
 ```
 
 Merge parts into one csv file
 
 ```bash
-cat split-aa split-ab > us_congestion.csv
+cat split-aa split-ab > congestion.csv
 ```
 
 ## Create HDFS directory
 ```bash
-hdfs dfs mkdir /tmp/data/congestion
-hdfs dfs -put us_congestion.csv /tmp/data/congestion
-hdfs dfs -ls /tmp/data/congestion
+hdfs dfs mkdir congestion
+hdfs dfs -put congestion.csv congestion
+hdfs dfs -ls congestion
+hdfs dfs mkdir congestion_by_month_year
 ```
-
-## Create Hive Table
+## HiveQL 
 ```sql
 use [username];
 
 DROP TABLE IF EXISTS congestion;
 
-CREATE EXTERNAL TABLE IF NOT EXISTS us_congestion(
-   ID STRING,
+CREATE EXTERNAL TABLE IF NOT EXISTS congestion(
+   id STRING,
    severity TINYINT,
    start_Lat DOUBLE,
    start_Lng DOUBLE,
@@ -109,96 +136,72 @@ CREATE EXTERNAL TABLE IF NOT EXISTS us_congestion(
    weather_Conditions STRING )
 ROW FORMAT DELIMITED 
 FIELDS TERMINATED BY ','
-STORED AS TEXTFILE LOCATION '/user/[username]/tmp/data/congestion'
-TBLPROPERTIES ('skip.header.line.count'='1');
+STORED AS TEXTFILE LOCATION '/user/[username]/congestion';
 ```
-
-
-# Process
-1. Temporal Segmentation: Divide the dataset into two segments: pre-COVID period and post-COVID period. The pre-COVID period could be defined as the time period before the implementation of widespread COVID-19 shutdowns and restrictions, while the post-COVID period could be defined as the time period after these measures were implemented. 
+Create smaller table to hold records attributes needed for analysis
 
 ```sql
-CREATE EXTERNAL TABLE IF NOT EXISTS us_congestion_slim (
-    id STRING,
+CREATE EXTERNAL TABLE IF NOT EXISTS congestion_slim (
     severity TINYINT,
-    start_Lat DOUBLE,
-    start_Lng DOUBLE,
-    startTime TIMESTAMP,
-    endTime TIMESTAMP,
-    distance DOUBLE,
     state STRING,
     month STRING,
+    year STRING,
     lockdown_period STRING );
+
 ```
-
-2. Congestion Metrics Calculation: Calculate relevant congestion metrics for each segment, such as: 
-
-   - Average congestion severity: Calculate the average severity of congestion events (e.g., 	severity column) for each segment. 
-
-   - Total congestion duration: Calculate the total duration of congestion events (e.g., using StartTime and EndTime columns) for each segment. 
-
-   - Congestion frequency: Count the number of congestion events for each segment. 
-
-   - Delay metrics: Calculate average delay times (e.g., DelayFromTypicalTraffic and DelayFromFreeFlowSpeed columns) for each segment. 
+Insert records from congestion table and label lockdown_period 
 
 ```sql
--- Insert data into us_congestion_slim
-INSERT OVERWRITE TABLE us_congestion_slim
+-- Insert data into congestion_slim
+INSERT INTO TABLE congestion_slim
 SELECT 
-    id,
     severity,
-    start_Lat,
-    start_Lng,
-    cast(substring(starttime,0,23) AS TIMESTAMP) AS starttime,
-    cast(substring(endtime,0,23) AS TIMESTAMP) AS endtime,
-    Distance,
     state,
     month(substring(startTime, 0, 10)) AS month,
+    year(substring(startTime, 0, 10)) AS year,
     CASE
-        WHEN year(substring(startTime, 0, 10)) < '2020' THEN 'before_lockdown'
+        WHEN year(substring(starttime,0,10)) < '2020' THEN 'before_lockdown'
         ELSE 'after_lockdown'
     END AS lockdown_period
 FROM
-    us_congestion
-WHERE year(substring(startTime, 0, 10)) >= '2018';
+    congestion;
 ```
-
-
-3. Comparison Analysis: Compare the congestion metrics between the pre-COVID and post-COVID periods to identify any significant differences or trends: 
-
-   - Severity comparison: Determine if there are differences in the severity of congestion events before and after the COVID-19 shutdown. 
-
-   - Duration comparison: Analyze if there are changes in the total duration or frequency of congestion events between the two periods. 
-
-   - Delay comparison: Compare average delay times before and after the COVID-19 shutdown to assess changes in travel times and congestion impacts. 
+Create grouped congestion data by state, month, and year
 
 ```sql
 -- Calculate average congestion severity by state, month and lockdown_period
-INSERT OVERWRITE DIRECTORY '/user/[username]/tmp/data/congestion_by_state_month_period'
+INSERT OVERWRITE DIRECTORY '/user/[username]/congestion_by_month_year'
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
 SELECT
     state,
     month,
+    year,
     lockdown_period,
     AVG(severity) AS avg_congestion_severity
 FROM
-    us_congestion_slim
+    congestion_slim
 GROUP BY
     state,
     month,
+    year,
     lockdown_period;
 ```
+## Download files
+
 Transfer file to linux server
-```bash
-hdfs dfs -get tmp/data/congestion_by_state_month_period/000000_0 000000_0
-hdfs dfs -get tmp/data/congestion_by_state_month_period/000001_0 000001_0
-```
-Add column titles and merge all results
-```bash
- echo 'state, starttime, lockdown_period, avg_congestion_severity'$'\n'"$(cat 000000_0)"$'\n'"$(cat 000001_0)" > avg_congestion_data.csv
-```
-4. Visualization: Visualize the congestion metrics using charts, graphs, or 3D maps to effectively communicate the findings of our analysis. We will create time series plots showing congestion trends over time, comparing congestion metrics between the pre-COVID and post-COVID periods, or spatial maps illustrating changes in congestion patterns across different regions. 
 
-5. Statistical Analysis: Conduct statistical tests, such as t-tests to determine if the observed differences in congestion metrics between the two periods are statistically significant.
+### Linux Node
+Transfer files from HDFS to linux node
+```bash 
+hdfs dfs -get congestion_by_month_year/000000_0 000000_0
+hdfs dfs -get congestion_by_month_year/000001_0 000001_0
+```
+Add column titles and concatinate all results into single file
 
-By analyzing the amount of congestion before and after the COVID-19 shutdown using this approach, we can gain insights into how the pandemic and associated measures impacted traffic patterns, congestion levels, and travel behaviors. This analysis could provide valuable information for transportation planning, policy-making, and infrastructure management efforts. 
+```bash
+ echo 'state,month,year,lockdown_period,avg_severity'$'\n'"$(cat 000000_0)"$'\n'"$(cat 000001_0)" > congestion_data.csv
+```
+### Windows GitBash
+```bash 
+scp [username]@129.146.148.35:/home/[username]/congestion_data.csv congestion_data.csv
+```
