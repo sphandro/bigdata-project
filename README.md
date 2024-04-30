@@ -81,8 +81,8 @@ CREATE EXTERNAL TABLE IF NOT EXISTS us_congestion(
    severity TINYINT,
    start_Lat DOUBLE,
    start_Lng DOUBLE,
-   startTime TIMESTAMP,
-   endTime TIMESTAMP,
+   startTime STRING,
+   endTime STRING,
    distance DOUBLE,
    delayFromTypicalTraffic TINYINT,
    delayFromFreeFlowSpeed TINYINT,
@@ -96,7 +96,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS us_congestion(
    zipCode INT,
    localTimeZone STRING,
    weatherStation_AirportCode STRING,
-   weatherTimeStamp TIMESTAMP,
+   weatherTimeStamp STRING,
    temperature TINYINT,
    windChill TINYINT,
    humidity TINYINT,
@@ -118,7 +118,7 @@ TBLPROPERTIES ('skip.header.line.count'='1');
 1. Temporal Segmentation: Divide the dataset into two segments: pre-COVID period and post-COVID period. The pre-COVID period could be defined as the time period before the implementation of widespread COVID-19 shutdowns and restrictions, while the post-COVID period could be defined as the time period after these measures were implemented. 
 
 ```sql
-CREATE EXTERNAL TABLE IF NOT EXISTS partitioned_us_congestion (
+CREATE EXTERNAL TABLE IF NOT EXISTS us_congestion_slim (
     id STRING,
     severity TINYINT,
     start_Lat DOUBLE,
@@ -142,20 +142,20 @@ CREATE EXTERNAL TABLE IF NOT EXISTS partitioned_us_congestion (
    - Delay metrics: Calculate average delay times (e.g., DelayFromTypicalTraffic and DelayFromFreeFlowSpeed columns) for each segment. 
 
 ```sql
--- Insert data into partitioned_us_congestion
-INSERT OVERWRITE TABLE partitioned_us_congestion
+-- Insert data into us_congestion_slim
+INSERT OVERWRITE TABLE us_congestion_slim
 SELECT 
     id,
     severity,
     start_Lat,
     start_Lng,
-    startTime,
-    endTime,
+    cast(substring(starttime,0,23) AS TIMESTAMP) AS starttime,
+    cast(substring(endtime,0,23) AS TIMESTAMP) AS endtime,
     Distance,
     state,
-    MONTH(SUBSTRING(startTime, 0, 10)) AS month,
+    month(substring(startTime, 0, 10)) AS month,
     CASE
-        WHEN YEAR(SUBSTRING(startTime, 0, 10)) < '2020' THEN 'before_lockdown'
+        WHEN year(substring(startTime, 0, 10)) < '2020' THEN 'before_lockdown'
         ELSE 'after_lockdown'
     END AS lockdown_period
 FROM
@@ -182,7 +182,7 @@ SELECT
     lockdown_period,
     AVG(severity) AS avg_congestion_severity
 FROM
-    partitioned_us_congestion
+    us_congestion_slim
 GROUP BY
     state,
     month,
@@ -190,11 +190,12 @@ GROUP BY
 ```
 Transfer file to linux server
 ```bash
-hdfs dfs -get tmp/data/congestion_by_state_month_period/000000_0 avg_congestion.txt
+hdfs dfs -get tmp/data/congestion_by_state_month_period/000000_0 000000_0
+hdfs dfs -get tmp/data/congestion_by_state_month_period/000001_0 000001_0
 ```
-Add column titles to top of file to make excel import easier
+Add column titles and merge all results
 ```bash
-echo '[column_names]'$'\n'"$(cat avg_congestion.txt)" > avg_congestion_columns.csv
+ echo 'state, starttime, lockdown_period, avg_congestion_severity'$'\n'"$(cat 000000_0)"$'\n'"$(cat 000001_0)" > avg_congestion_data.csv
 ```
 4. Visualization: Visualize the congestion metrics using charts, graphs, or 3D maps to effectively communicate the findings of our analysis. We will create time series plots showing congestion trends over time, comparing congestion metrics between the pre-COVID and post-COVID periods, or spatial maps illustrating changes in congestion patterns across different regions. 
 
