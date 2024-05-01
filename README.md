@@ -188,6 +188,7 @@ GROUP BY
 This generates many files in the HDFS directory congestion_state_month/
 ```
 /congestion_state_month/000000_0
+/congestion_state_month/000001_0
 /congestion_state_month/000002_0
 /congestion_state_month/000003_0
 /congestion_state_month/........
