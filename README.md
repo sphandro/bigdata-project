@@ -95,7 +95,7 @@ ssh [username]@server_ip
 Use the following terminal commands to download and extract the dataset.
 
 ```bash
-wget -O congestion_18_21.tar.gz https://github.com/sphandro/bigdata-project/raw/main/dataset/congestion_18_21.tar.gz
+wget -O congestion_18_21.tar.gz https://github.com/sphandro/bigdata-project/raw/main/congestion_18_21.tar.gz
 ```
 
 ```bash
@@ -152,22 +152,11 @@ ROW FORMAT DELIMITED
 FIELDS TERMINATED BY ','
 STORED AS TEXTFILE LOCATION '/user/[username]/congestion';
 ```
-Create smaller table to hold only record attributes needed for analysis
+Create smaller table to hold only record attributes needed for analysis based on the congestion table
 
 ```sql
-CREATE EXTERNAL TABLE IF NOT EXISTS congestion_slim (
-    severity TINYINT,
-    state STRING,
-    month STRING,
-    year STRING,
-    lockdown_period STRING );
-
-```
-Insert records from congestion table and label lockdown periods for segmentation later.
-
-```sql
-INSERT INTO TABLE congestion_slim
-SELECT 
+CREATE TABLE IF NOT EXISTS congestion_slim 
+AS SELECT
     severity,
     state,
     month(substring(startTime, 0, 10)) AS month,
@@ -182,12 +171,11 @@ FROM
 Our dataset contains hourly records accross the united states. Grouping by state, month, year and lockdown_period helps reduce the results further. Finally we calculate average congestion severity by state, month and lockdown_period.
 
 ```sql
-INSERT OVERWRITE DIRECTORY '/user/[username]/congestion_by_month_year'
+INSERT OVERWRITE DIRECTORY '/user/amonita/congestion_state_month'
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
 SELECT
     state,
     month,
-    year,
     lockdown_period,
     AVG(severity) AS avg_congestion_severity
 FROM
@@ -195,7 +183,6 @@ FROM
 GROUP BY
     state,
     month,
-    year,
     lockdown_period;
 ```
 ## Download files
@@ -207,15 +194,29 @@ Transfer file to linux server
 Transfer files from HDFS to linux node
 
 ```bash 
-hdfs dfs -get congestion_by_month_year/000000_0 000000_0
-hdfs dfs -get congestion_by_month_year/000001_0 000001_0
+hdfs dfs -get congestion_by_month_year/*
 ```
-Add column titles and concatinate all results into single file
+
+ Concatinate into a single csv file and remove extra files
+ 
+```bash 
+cat 000* > congestion_data.csv
+rm 000*
+```
+Add column titles to facilitate excel import
 
 ```bash
- echo 'state,month,year,lockdown_period,avg_severity'$'\n'"$(cat 000000_0)"$'\n'"$(cat 000001_0)" > congestion_data.csv
+ echo 'state,month,year,lockdown_period,avg_severity'$'\n'"$(cat congestion_data.csv)" > congestion_data.csv
 ```
 ### Windows GitBash
 ```bash 
 scp [username]@129.146.148.35:/home/[username]/congestion_data.csv congestion_data.csv
 ```
+### Excel 3D map
+- Open Excel and import congestion_data.csv data
+- Select *month* column and format cells to Date format
+- Save Excel file as .xlsx
+- Insert 3D Map
+- **Location** state
+- **Height** avg_severity
+- **Category** lockdown_period
