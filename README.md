@@ -210,13 +210,17 @@ Add column titles to facilitate excel import
 ```
 ### Windows GitBash
 ```bash 
-scp [username]@129.146.148.35:/home/[username]/congestion_data.csv congestion_data.csv
+scp [username]@[server_ip]:/home/[username]/congestion_data.csv congestion_data.csv
 ```
-### Excel 3D map
+### Excel 3D Map
 - Open Excel and import congestion_data.csv data
 - Select *month* column and format cells to Date format
-- Save Excel file as .xlsx
-- Insert 3D Map
-- **Location** state
-- **Height** avg_severity
-- **Category** lockdown_period
+- Save Excel file as *.xlsx*
+- Select 3D Map from Insert tab
+- Set the following:
+    - **Location**: state
+    - **Height**: avg_severity
+    - **Category**: lockdown_period
+
+## Result
+![Excel 3DMap Screenshot](excel-3dmap.png)
