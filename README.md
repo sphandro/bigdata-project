@@ -95,7 +95,7 @@ ssh [username]@server_ip
 Use the following terminal commands to download and extract the dataset.
 
 ```bash
-wget -O congestion_18_21.tar.gz https://github.com/sphandro/bigdata-project/raw/main/congestion_18_21.tar.gz
+wget -O congestion_18_21.tar.gz https://github.com/sphandro/bigdata-project/raw/main/dataset/congestion_18_21.tar.gz
 ```
 
 ```bash
