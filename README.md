@@ -223,4 +223,4 @@ scp [username]@[server_ip]:/home/[username]/congestion_data.csv congestion_data.
     - **Category**: lockdown_period
 
 ## Result
-![Excel 3DMap Screenshot](excel-3dmap.png)
+![Excel 3DMap Screenshot](images/excel-3dmap.png)
