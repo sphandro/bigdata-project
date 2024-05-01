@@ -83,7 +83,7 @@ This original dataset contained hourly data for years 2016-2022, but we want to 
 To prune the 12GB csv file we use the following grep command to generate a new file containing data within our analysis range.
 
 ```bash
-grep -E '(,2018-|,2019-|,2020-|,2021-)' congestion.csv > congestion_18_21.csv
+grep -E '(,2018-|,2019-|,2020-|,2021-)' us-traffic-congestions-2016-2022.csv > congestion_18_21.csv
 ```
 ## Dataset Preparation
 
