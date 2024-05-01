@@ -106,10 +106,10 @@ tar -xzf congestion_18_21.tar.gz
 
 ## Create HDFS directory
 ```bash
-hdfs dfs mkdir congestion
+hdfs dfs -mkdir congestion
 hdfs dfs -put congestion.csv congestion
 hdfs dfs -ls congestion
-hdfs dfs mkdir congestion_by_month_year
+hdfs dfs -mkdir congestion_by_month_year
 ```
 ## HiveQL 
 ```sql
@@ -185,11 +185,15 @@ GROUP BY
     month,
     lockdown_period;
 ```
-## Download files
+This generates many files in the HDFS directory congestion_state_month/
+```
+/congestion_state_month/000000_0
+/congestion_state_month/000002_0
+/congestion_state_month/000003_0
+/congestion_state_month/........
+```
 
-Transfer file to linux server
-
-### Linux Node
+## Linux Node
 
 Transfer files from HDFS to linux node
 
@@ -197,7 +201,7 @@ Transfer files from HDFS to linux node
 hdfs dfs -get congestion_by_month_year/*
 ```
 
- Concatinate into a single csv file and remove extra files
+ Concatinate files into a new csv file and remove extra files
  
 ```bash 
 cat 000* > congestion_data.csv
