@@ -78,7 +78,7 @@ By analyzing the amount of congestion before and after the COVID-19 shutdown usi
 # Tutorial
 ## Pre Processing
 
-This original dataset contained hourly data for years 2016-2022, but we want to segment the data between two years before and prior to the COVID-19 lockdown. 
+This original dataset contains dailey records spanning the united states for years 2016-2022, but we want to segment the data between two years before and prior to the COVID-19 lockdown. 
 
 To prune the 12GB csv file we use the following grep command to generate a new file containing data within our analysis range.
 
@@ -97,11 +97,11 @@ Use the following terminal commands to download and extract the dataset.
 ```bash
 wget -O congestion_18_21.tar.gz https://github.com/sphandro/bigdata-project/raw/main/dataset/congestion_18_21.tar.gz
 ```
+ Uncompress the file, the resulting file is about 9.15GB
 
 ```bash
 tar -xzf congestion_18_21.tar.gz
 ```
- uncompress file, the resulting file is about 9.15GB
 
 
 ## Create HDFS directory
@@ -185,7 +185,8 @@ GROUP BY
     month,
     lockdown_period;
 ```
-This generates many files in the HDFS directory congestion_state_month/
+Results are stored as a file sequence in the HDFS directory congestion_state_month/
+
 ```
 /congestion_state_month/000000_0
 /congestion_state_month/000001_0
@@ -229,3 +230,4 @@ scp [username]@[server_ip]:/home/[username]/congestion_data.csv congestion_data.
 
 ## Result
 ![Excel 3DMap Screenshot](images/excel-3dmap.png)
+The 3D Map shows bars over each state representing averages for three years before the COVID-19 lockdown (blue) compared to three years afterwards (red). The bar heights correlate with average congestion severity for any given month. The time slider shows the variation in severity for any given month across one year. Although the date label says 1900, it represents the years 2018-2021. Each month in the time slider represents averages of two months of data per lockdown segment. Pictured here, we can see the average congestion severity for Febuary 2018 and February 2019 compared with February 2020 and February 2021 for every state.
