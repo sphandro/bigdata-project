@@ -200,7 +200,7 @@ Results are stored as a file sequence in the HDFS directory congestion_state_mon
 Transfer files from HDFS to linux node
 
 ```bash 
-hdfs dfs -get congestion_by_month_year/*
+hdfs dfs -get congestion_state_month/*
 ```
 
  Concatinate files into a new csv file and remove extra files
