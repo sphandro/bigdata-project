@@ -212,7 +212,7 @@ rm 000*
 Add column titles to facilitate excel import
 
 ```bash
- echo 'state,month,year,lockdown_period,avg_severity'$'\n'"$(cat congestion_data.csv)" > congestion_data.csv
+ echo 'state,month,lockdown_period,avg_severity'$'\n'"$(cat congestion_data.csv)" > congestion_data.csv
 ```
 ### Windows GitBash
 ```bash 
