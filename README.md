@@ -107,7 +107,7 @@ tar -xzf congestion_18_21.tar.gz
 ## Create HDFS directory
 ```bash
 hdfs dfs -mkdir congestion
-hdfs dfs -put congestion.csv congestion
+hdfs dfs -put congestion_18_21.csv congestion
 hdfs dfs -ls congestion
 hdfs dfs -mkdir congestion_by_month_year
 ```
@@ -171,7 +171,7 @@ FROM
 Our dataset contains hourly records accross the united states. Grouping by state, month, year and lockdown_period helps reduce the results further. Finally we calculate average congestion severity by state, month and lockdown_period.
 
 ```sql
-INSERT OVERWRITE DIRECTORY '/user/amonita/congestion_state_month'
+INSERT OVERWRITE DIRECTORY '/user/[amonita]/congestion_state_month'
 ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
 SELECT
     state,
