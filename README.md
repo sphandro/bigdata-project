@@ -213,5 +213,5 @@ scp [username]@[server_ip]:/home/[username]/congestion_data.csv congestion_data.
     - **Category**: lockdown_period
 
 ## Result
-![Excel 3DMap Screenshot](images/excel-3dmap.png)
-The 3D Map shows bars over each state representing averages for three years before the COVID-19 lockdown (blue) compared to three years afterwards (red). The bar heights correlate with average congestion severity for any given month. The time slider shows the variation in severity for any given month across one year. Although the date label says 1900, it represents the years 2018-2021. Each month in the time slider represents averages of two months of data per lockdown segment. Pictured here, we can see the average congestion severity for February 2018 and February 2019 compared with February 2020 and February 2021 for every state.
+![Excel 3DMap Screenshot](images/updated-3d-map.png)
+The 3D Map shows circles over each state representing averages for three years before the COVID-19 lockdown (blue) compared to three years afterwards (red). The circle ratios correlate with average congestion severity for any given month. The time slider shows the variation in severity for any given month across one year. Although the date label says 1900, it represents the years 2018-2021. Each month in the time slider represents averages of two months of data per lockdown segment. Pictured here, we can see the average congestion severity for December 2018 and December 2019 compared with December 2020 and December 2021 for every state.
